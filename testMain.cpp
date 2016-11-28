@@ -32,18 +32,29 @@ int main()
     ORMapper thief("localhost","thief","ssopq","test",0);
    // thief.createTbl(PokemonServer ("f","y",888));
     std::vector<PokemonServer> listPokemon;
-    PokemonServer wodner1("efil","s1",12);
-    PokemonServer wodner2("ec","s2",23);
-    PokemonServer wodner3("ed","s3",45);
+    PokemonServer wodner1("ef","thief",777);
+    PokemonServer wodner2("haha","s2",23);
+    PokemonServer wodner3("ethsdfiefdad","563",45);
     listPokemon.push_back(wodner1);
     listPokemon.push_back(wodner2);
     listPokemon.push_back(wodner3);
-    thief.updateRange(listPokemon);
+    //thief.updateRange(listPokemon);
+    //thief.insertRange(listPokemon);
+    //thief.insert(wodner1);
+    try {
+      //  thief.update(wodner3);
+    }catch (const std::exception &e)
+    {
+        std::cout<<e.what();
+    }
 
+   // std::cout<<(Exp("id")=="thief"|| (Exp("name")<"thief")).realExpr;
+//    std::string hi;
+//    hi+="'";
+//    std::cout<<hi;
   //  thief.insertRange(listPokemon);
    // thief.dropTbl(PokemonServer());
    // thief.initField();
    // PokemonServer t;
 
-    decltype(77) hi;
 }

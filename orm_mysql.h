@@ -69,6 +69,14 @@ namespace ORM_MYSQL_OP
         void execute(const std::string & cmd)
         {
             mysql_query(connector,cmd.c_str());
+            std::string errorInfo=std::string(mysql_error(connector));
+            if (!errorInfo.empty())
+            {
+                throw std::runtime_error(
+                        std::string("error for execute "+cmd+".\n")
+                        + std::string(mysql_error(connector))
+                );
+            }
         }
 
     private:
@@ -249,7 +257,7 @@ namespace ORM_MYSQL_THIEF
         {
             std::string insertStr="insert into "+std::string(T::_className)+
             " ("+std::string(T::_fieldName)+") values ";
-            unsigned int index=_fieldName.size();
+            unsigned int index=ORM_MYSQL_OP::FieldManager::extractField<T>() .size();
             std::ostringstream valuesStr;
             classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
                                   [&valuesStr,&index](auto &value)
@@ -276,7 +284,7 @@ namespace ORM_MYSQL_THIEF
             using T=typename nT::value_type;
             std::string insertStr="insert into "+std::string(T::_className)+
                                   " ("+std::string(T::_fieldName)+") values ";
-
+            _fieldName=ORM_MYSQL_OP::FieldManager::extractField<T> ();
             for(auto classObject:classObjects)
             {
                 unsigned int index=_fieldName.size();
@@ -378,8 +386,26 @@ namespace ORM_MYSQL_THIEF
         }
 
         template <typename T>
-        void
+        void deleteRow(const T& classObject)
+        {
+            std::string deleteCmd="delete from "+std::string(T::_className);
+            std::ostringstream deleteStr;
+            classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
+                                  [&deleteStr](auto &val)
+                                  {
+                                      deleteStr<<ORM_MYSQL_OP::FieldManager::extractField<T>() [0] <<"=";
+                                      ORM_MYSQL_OP::SerializeValue(deleteStr,val);
+                                      return false;
+                                  });
+            deleteCmd+=" where "+deleteStr.str();
+            _connector.execute(deleteCmd);
+
+        }
+
+        template <typename T>
+
         /************************************************************************/
+
 
 
        // template <typename T>
@@ -399,5 +425,90 @@ namespace ORM_MYSQL_THIEF
         std::vector<std::string> _fieldName;
 
     };
+
+
+    // get expression string
+    struct Exp
+    {
+        std::string realExpr;
+        std::vector<std::pair<const void*,std::string>> expr;
+        Exp(const std::string &property)
+        {
+            realExpr+=property;
+        }
+
+        template <typename T>
+        Exp Field(const std::string& opStr,T value)
+        {
+            std::ostringstream os;
+            ORM_MYSQL_OP::SerializeValue(os,value);
+            realExpr+=opStr+os.str();
+            realExpr.insert(0,"(");
+            realExpr.push_back(')');
+            return *this;
+        }
+
+        Exp Field(const std::string& opStr,const char* value)
+        {
+            std::ostringstream os;
+            ORM_MYSQL_OP::SerializeValue(os,std::string(value));
+            realExpr+=opStr+os.str();
+            realExpr.insert(0,"(");
+            realExpr.push_back(')');
+            return *this;
+        }
+
+        template <typename T>
+        inline Exp operator == (T value)
+        {
+            return Field("=",value);
+        }
+        template <typename T>
+        inline Exp operator != (T value)
+        {
+            return Field("!=",value);
+        }
+        template <typename T>
+        inline Exp operator < (T value)
+        {
+            return Field("<",value);
+        }
+        template <typename T>
+        inline Exp operator <= (T value)
+        {
+            return Field("<=",value);
+        }
+        template <typename T>
+        inline Exp operator > (T value)
+        {
+            return Field(">",value);
+        }
+        template <typename T>
+        inline Exp operator >= (T value)
+        {
+            return Field(">=",value);
+        }
+
+        inline Exp operator || (const Exp& expr)
+        {
+            realExpr+=" or "+expr.realExpr;
+            realExpr.insert(0,"(");
+            realExpr.push_back(')');
+            return *this;
+        }
+
+        inline Exp operator && (const Exp& expr)
+        {
+            realExpr+=" and "+expr.realExpr;
+            realExpr.insert(0,"(");
+            realExpr.push_back(')');
+            return *this;
+        }
+    };
+
+
+
+
+
 }
 #endif //TESTCONNECT_ORM_MYSQL_H
