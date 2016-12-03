@@ -12,6 +12,7 @@
 #include <typeinfo>
 #include <tuple>
 #include <map>
+#include <assert.h>
 
 typedef std::vector<std::vector <std::string>> Sql_Result;
 
@@ -32,6 +33,54 @@ private:                                               \
 
 namespace ORM_MYSQL_OP
 {
+
+    class OnePiece
+    {
+    public:
+
+        //init real value by type string
+        OnePiece(const std::string& type,const std::string& val)
+        {
+            if (type=="int")
+            {
+                number=1;
+                value_int=std::stoi(val);
+            }
+            else if(type=="float")
+            {
+                number=2;
+                value_float=std::stof(val);
+            }
+            else if(type=="string")
+            {
+                number=3;
+                value_string=val;
+            }
+        }
+
+        // overload different type function for assignment
+        operator int() const
+        {
+            return value_int;
+        }
+
+        operator float() const
+        {
+            return value_float;
+        }
+        operator std::string() const
+        {
+            return value_string;
+        }
+
+        int number;
+        int value_int;
+        float value_float;
+        std::string value_string;
+
+    };
+
+
     class SQLConnector
     {
     public:
@@ -59,53 +108,32 @@ namespace ORM_MYSQL_OP
 
         }
 
-        std::vector<std::vector <std::string>> getResultVector(std::vector<std::string>& fields,std::map<std::string,std::string>& nameToType)
+
+        std::vector<std::vector<ORM_MYSQL_OP::OnePiece>> getResultVector(std::vector<std::string>& fields,
+                                                                         std::map<std::string,std::string>& nameToType)
         {
-            std::vector<std::vector <std::string>> realResult;
+            std::vector<std::vector<ORM_MYSQL_OP::OnePiece>> realResult;
 
             MYSQL_RES *_result=mysql_store_result(connector);
-
             if (_result!=NULL)
             {
                 int num_fields=mysql_num_fields(_result);
                 MYSQL_ROW _row;
                 while((_row=mysql_fetch_row(_result)))
                 {
-                    std::vector <std::string> singleRow;
-                    auto rowTuple=std::make_tuple();
+                    std::vector <ORM_MYSQL_OP::OnePiece> singleRow;
                     for(int i=0;i<num_fields;i++)
                     {
-                        std::string typeStr=nameToType[fields[i]];
-
-                        if (typeStr=="int")
-                        {
-                            int m;
-                            m=*(int*)_row[i];
-                            auto ll=std::tuple_cat(rowTuple,m);
-                            std::cout<<std::get<0>(ll);
-
-                        }
-                        else if(typeStr=="float")
-                        {
-                            float f;
-                            f=*(float*)_row[i];
-                            std::tuple_cat(rowTuple,i);
-                        }
-                        else if(typeStr=="string")
-                        {
-                            std::string s=std::string(_row[i]);
-                            std::tuple_cat(rowTuple,s);
-                        }
-                        singleRow.push_back(std::string(_row[i]));
-                    }
-                    realResult.push_back(singleRow);
+                        OnePiece one(nameToType.find(fields[i])->second,std::string(_row[i]));
+                        singleRow.push_back(one);
+                     }
+                     realResult.push_back(singleRow);
 
                 }
                 mysql_free_result(_result);
 
             }
             return std::move(realResult);
-
         }
 
 
@@ -120,19 +148,11 @@ namespace ORM_MYSQL_OP
         {
             mysql_query(connector,cmd.c_str());
             std::string errorInfo=std::string(mysql_error(connector));
-//            if (!errorInfo.empty())
-//            {
-//                throw std::runtime_error(
-//                        std::string("error for execute "+cmd+".\n")
-//                        + std::string(mysql_error(connector))
-//                );
-//            }
         }
 
     private:
         MYSQL *connector;
     };
-
 
     class FnVisitor
     {
@@ -173,22 +193,6 @@ namespace ORM_MYSQL_OP
     {
         return os << "'" << value << "'";
     }
-
-    // Helper - Deserialize
-    template <typename T>
-    inline void DeserializeValue (T &property, std::string value)
-    {
-        std::stringstream ostr (value);
-        ostr >> property;
-    }
-
-    template <>
-    inline void DeserializeValue <std::string>
-            (std::string &property, std::string value)
-    {
-        property = std::move (value);
-    }
-
 
     class FieldManager
     {
@@ -272,193 +276,179 @@ namespace ORM_MYSQL_OP
 
 }
 
-namespace ORM_MYSQL_THIEF
-{
+namespace ORM_MYSQL_THIEF {
     class Query;
     class Select;
     class Exp;
 
 
     // get expression string
-    class Exp
-    {
+    class Exp {
     public:
         std::string realExpr;
 
-        Exp(const std::string &property)
-        {
-            realExpr+=property;
+        Exp(const std::string &property) {
+            realExpr += property;
         }
 
-        Exp(const char* property)
-        {
-            realExpr+=std::string(property);
+        Exp(const char *property) {
+            realExpr += std::string(property);
         }
 
-        template <typename T>
-        Exp Field(const std::string& opStr,T value)
-        {
+        template<typename T>
+        Exp Field(const std::string &opStr, T value) {
             std::ostringstream os;
-            ORM_MYSQL_OP::SerializeValue(os,value);
-            realExpr+=opStr+os.str();
-            realExpr.insert(0,"(");
+            ORM_MYSQL_OP::SerializeValue(os, value);
+            realExpr += opStr + os.str();
+            realExpr.insert(0, "(");
             realExpr.push_back(')');
             return *this;
         }
 
-        Exp Field(const std::string& opStr,const char* value)
-        {
+        Exp Field(const std::string &opStr, const char *value) {
             std::ostringstream os;
-            ORM_MYSQL_OP::SerializeValue(os,std::string(value));
-            realExpr+=opStr+os.str();
-            realExpr.insert(0,"(");
+            ORM_MYSQL_OP::SerializeValue(os, std::string(value));
+            realExpr += opStr + os.str();
+            realExpr.insert(0, "(");
             realExpr.push_back(')');
             return *this;
         }
 
-        template <typename T>
-        inline Exp operator = (T value)
-        {
-            return Field("=",std::move(value));
-        }
-        template <typename T>
-        inline Exp operator == (T value)
-        {
-            return Field("=",std::move(value));
-        }
-        template <typename T>
-        inline Exp operator != (T value)
-        {
-            return Field("!=",std::move(value));
-        }
-        template <typename T>
-        inline Exp operator < (T value)
-        {
-            return Field("<",std::move(value));
-        }
-        template <typename T>
-        inline Exp operator <= (T value)
-        {
-            return Field("<=",std::move(value));
-        }
-        template <typename T>
-        inline Exp operator > (T value)
-        {
-            return Field(">",std::move(value));
-        }
-        template <typename T>
-        inline Exp operator >= (T value)
-        {
-            return Field(">=",std::move(value));
+        template<typename T>
+        inline Exp operator=(T value) {
+            return Field("=", std::move(value));
         }
 
-        inline Exp operator || (const Exp& expr)
-        {
-            realExpr+=" or "+expr.realExpr;
-            realExpr.insert(0,"(");
+        template<typename T>
+        inline Exp operator==(T value) {
+            return Field("=", std::move(value));
+        }
+
+        template<typename T>
+        inline Exp operator!=(T value) {
+            return Field("!=", std::move(value));
+        }
+
+        template<typename T>
+        inline Exp operator<(T value) {
+            return Field("<", std::move(value));
+        }
+
+        template<typename T>
+        inline Exp operator<=(T value) {
+            return Field("<=", std::move(value));
+        }
+
+        template<typename T>
+        inline Exp operator>(T value) {
+            return Field(">", std::move(value));
+        }
+
+        template<typename T>
+        inline Exp operator>=(T value) {
+            return Field(">=", std::move(value));
+        }
+
+        inline Exp operator||(const Exp &expr) {
+            realExpr += " or " + expr.realExpr;
+            realExpr.insert(0, "(");
             realExpr.push_back(')');
             return *this;
         }
 
-        inline Exp operator && (const Exp& expr)
-        {
-            realExpr+=" and "+expr.realExpr;
-            realExpr.insert(0,"(");
+        inline Exp operator&&(const Exp &expr) {
+            realExpr += " and " + expr.realExpr;
+            realExpr.insert(0, "(");
             realExpr.push_back(')');
             return *this;
         }
     };
 
-    class Query
-    {
+    class Query {
     public:
-        Query(std::string& tableName,std::string& selectField,ORM_MYSQL_OP::SQLConnector& connector)
-                :_queryStr(selectField),_tableName(tableName),_connector(&connector)
+        Query(std::string &tableName, std::string &selectField, ORM_MYSQL_OP::SQLConnector &connector,
+              std::vector<std::string> &fields,
+              std::map<std::string, std::string> &nameToType)
+                : _queryStr(selectField), _tableName(tableName), _connector(&connector),
+                  _nameToType(nameToType) ,_fields(fields)
         {
 
         }
-        Query(std::string& tableName,ORM_MYSQL_OP::SQLConnector& connector)
-                :_queryStr("select * from "+tableName+" "),_tableName(tableName),_connector(&connector)
+
+        Query(std::string &tableName, ORM_MYSQL_OP::SQLConnector &connector, std::vector<std::string> &fieldNames,
+              std::map<std::string, std::string> &nameToType)
+                : _queryStr("select * from " + tableName + " "), _tableName(tableName), _connector(&connector),
+                  _nameToType(nameToType) ,_fields(fieldNames)
         {
 
         }
 
-        Query& where(const Exp& expr)
-        {
-            _sqlwhere=" where "+expr.realExpr;
-            _queryStr+=_sqlwhere;
+        Query &where(const Exp &expr) {
+            _sqlwhere = " where " + expr.realExpr;
+            _queryStr += _sqlwhere;
 
             return *this;
         }
 
-        Query& limit(int count1,int count2)
-        {
-            _queryStr+=" limit "+std::to_string(count1)+","+std::to_string(count2);
-            return *this;
-        }
-        Query& limit(int count)
-        {
-            _queryStr+=" limit "+std::to_string(count);
+        Query &limit(int count1, int count2) {
+            _queryStr += " limit " + std::to_string(count1) + "," + std::to_string(count2);
             return *this;
         }
 
-        Query& offset(int count)
-        {
-            _queryStr+=" offset　"+std::to_string(count);
+        Query &limit(int count) {
+            _queryStr += " limit " + std::to_string(count);
             return *this;
         }
 
-        void update(const Exp& exp)
-        {
+        Query &offset(int count) {
+            _queryStr += " offset　" + std::to_string(count);
+            return *this;
+        }
+
+        void update(const Exp &exp) {
             std::string realExp;
             //delete ( and ) in Exp
-            for(auto a:exp.realExpr)
-            {
-                if (a!='(' && a!=')')
-                {
-                    realExp+=a;
+            for (auto a:exp.realExpr) {
+                if (a != '(' && a != ')') {
+                    realExp += a;
                 }
             }
-            std::string updateStr="update "+_tableName+" set "+realExp+_sqlwhere;
+            std::string updateStr = "update " + _tableName + " set " + realExp + _sqlwhere;
             _connector->execute(updateStr);
         }
 
-        void del(const Exp& exp)
-        {
-            std::string deleteStr="delete from "+_tableName+_sqlwhere;
+        void del(const Exp &exp) {
+            std::string deleteStr = "delete from " + _tableName + _sqlwhere;
             _connector->execute(deleteStr);
         }
 
-        std::vector<std::vector <std::string>> toVector()
-        {
+        std::vector<std::vector<ORM_MYSQL_OP::OnePiece>> toVector() {
             _connector->execute(_queryStr);
-            return std::move(_connector->getResultVector());
+            return std::move(_connector->getResultVector(_fields,_nameToType));
         }
 
     private:
         std::string _queryStr;
         std::string _tableName;
         std::string _sqlwhere;
-
-        ORM_MYSQL_OP::SQLConnector* _connector;
+        std::vector<std::string> _fields;
+        std::map<std::string, std::string> _nameToType;
+        ORM_MYSQL_OP::SQLConnector *_connector;
     };
 
-    class Select
-    {
+    class Select {
     public:
-        Select(const std::string& tableName,Exp& expr,ORM_MYSQL_OP::SQLConnector& connector,std::map<std::string,std::string>& nameToType)
-                :_selectField("select "+expr.realExpr+" from "+tableName),_connector(&connector),_nameToType(nameToType)
+        Select(const std::string &tableName, Exp &expr, ORM_MYSQL_OP::SQLConnector &connector,
+               std::map<std::string, std::string> &nameToType)
+                : _selectField("select " + expr.realExpr + " from " + tableName), _connector(&connector),
+                  _nameToType(nameToType)
         {
-            std::string tempName="";
-            int rawLen=expr.realExpr.length();
-            for(int i=0;i<rawLen;++i)
-            {
-                if (expr.realExpr[i]!=',')
-                {
-                    tempName+=expr.realExpr[i];
-                }
-                else
-                {
+            std::string tempName = "";
+            int rawLen = expr.realExpr.length();
+            for (int i = 0; i < rawLen; ++i) {
+                if (expr.realExpr[i] != ',') {
+                    tempName += expr.realExpr[i];
+                } else {
                     _fields.push_back(tempName);
                     tempName.clear();
                 }
@@ -466,285 +456,277 @@ namespace ORM_MYSQL_THIEF
             _fields.push_back(tempName);
         }
 
-        Select(const std::string& tableName,ORM_MYSQL_OP::SQLConnector& connector,std::vector<std::string> &fieldName,std::map<std::string,std::string>& nameToType)
-                :_selectField("select * from "+tableName),_connector(&connector),_tableName(tableName),_fieldName(fieldName),_nameToType(nameToType)
+        Select(const std::string &tableName, ORM_MYSQL_OP::SQLConnector &connector, std::vector<std::string> &fieldName,
+               std::map<std::string, std::string> &nameToType)
+                : _selectField("select * from " + tableName), _connector(&connector), _tableName(tableName),
+                  _fieldName(fieldName), _nameToType(nameToType) ,_fields(fieldName)
         {
 
         }
 
-        Query query()
-        {
-            Query _query(_tableName,_selectField,*_connector);
+        Query query() {
+            Query _query(_tableName, _selectField, *_connector,_fields,_nameToType);
             return std::move(_query);
         }
 
-        std::vector<std::vector <std::string>> toVector()
-        {
+
+        std::vector<std::vector<ORM_MYSQL_OP::OnePiece>> toVector() {
             _connector->execute(_selectField);
-            return std::move(_connector->getResultVector(_fields,_nameToType));
+            return std::move(_connector->getResultVector(_fields, _nameToType));
         }
 
     private:
         std::vector<std::string> _fields;
         std::vector<std::string> _fieldName;
-        std::map<std::string,std::string> _nameToType;
+        std::map<std::string, std::string> _nameToType;
         std::string _selectField;
         std::string _tableName;
         ORM_MYSQL_OP::SQLConnector *_connector;
     };
 
-    class ORMapper
-    {
+    class ORMapper {
     public:
 
         ORMapper(const std::string &host, const std::string &user,
-                 const std::string &password,const std::string &db,int port)
-        {
-            _connector=new ORM_MYSQL_OP::SQLConnector(host,user,password,db,port);
+                 const std::string &password, const std::string &db, int port) {
+            _connector = new ORM_MYSQL_OP::SQLConnector(host, user, password, db, port);
         }
-        ~ORMapper()
-        {}
+
+        ~ORMapper() {}
         /************************************************************************
         different operations on sql
         ************************************************************************/
         // create table
-        template <typename T>
-        bool createTbl(const T& classObject)
-        {
+        template<typename T>
+        bool createTbl(const T &classObject) {
             // get fieldName and fieldType
-            _fieldName=ORM_MYSQL_OP::FieldManager::extractField<T> ();
+            _fieldName = ORM_MYSQL_OP::FieldManager::extractField<T>();
             std::vector<std::string> _fieldType(_fieldName.size());
-            unsigned int index=0;
+            unsigned int index = 0;
 
             classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
-                                  [&_fieldType,&index](auto &val)
-                                  {
-                                      _fieldType[index++]=ORM_MYSQL_OP::FieldManager::TypeString(val);
+                                  [&_fieldType, &index](auto &val) {
+                                      _fieldType[index++] = ORM_MYSQL_OP::FieldManager::TypeString(val);
                                       return true;
                                   });
 
-            std::string createStr="create table "+std::string(T::_className)+" ";
+            std::string createStr = "create table " + std::string(T::_className) + " ";
 
-            std::string createField="";
-            for(unsigned int i=0;i<_fieldType.size();++i)
-            {
-                createField+=_fieldName[i]+" "+std::string(_fieldType[i])+",";
+            std::string createField = "";
+            for (unsigned int i = 0; i < _fieldType.size(); ++i) {
+                createField += _fieldName[i] + " " + std::string(_fieldType[i]) + ",";
             }
-            createField+=" primary key ("+_fieldName[0]+" )";
+            createField += " primary key (" + _fieldName[0] + " )";
             //todo execute create
-            _connector->execute(createStr+" ( "+createField+" )");
+            _connector->execute(createStr + " ( " + createField + " )");
         }
 
-        template <typename T>
-        void dropTbl(const T &className)
-        {
-            _connector->execute("drop table "+std::string(T::_className));
+        template<typename T>
+        void dropTbl(const T &className) {
+            _connector->execute("drop table " + std::string(T::_className));
         }
 
-        template <typename T>
-        void insert(T& classObject)
-        {
-            std::string insertStr="insert into "+std::string(T::_className)+
-                                  " ("+std::string(T::_fieldName)+") values ";
-            unsigned int index=ORM_MYSQL_OP::FieldManager::extractField<T>() .size();
+        template<typename T>
+        void insert(T &classObject) {
+            std::string insertStr = "insert into " + std::string(T::_className) +
+                                    " (" + std::string(T::_fieldName) + ") values ";
+            unsigned int index = ORM_MYSQL_OP::FieldManager::extractField<T>().size();
             std::ostringstream valuesStr;
             classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
-                                  [&valuesStr,&index](auto &value)
-                                  {
-                                      if (index>1)
-                                      {
-                                          ORM_MYSQL_OP::SerializeValue(valuesStr,value)<<",";
-                                      }
-                                      else
-                                      {
-                                          ORM_MYSQL_OP::SerializeValue(valuesStr,value);
+                                  [&valuesStr, &index](auto &value) {
+                                      if (index > 1) {
+                                          ORM_MYSQL_OP::SerializeValue(valuesStr, value) << ",";
+                                      } else {
+                                          ORM_MYSQL_OP::SerializeValue(valuesStr, value);
                                       }
                                       index--;
                                       return true;
                                   });
 
-            _connector->execute(insertStr+" ("+valuesStr.str()+")");
+            _connector->execute(insertStr + " (" + valuesStr.str() + ")");
 
         }
 
-        template <typename nT>
-        void insertRange(nT &classObjects)
-        {
+        template<typename nT>
+        void insertRange(nT &classObjects) {
             using T=typename nT::value_type;
-            std::string insertStr="insert into "+std::string(T::_className)+
-                                  " ("+std::string(T::_fieldName)+") values ";
-            _fieldName=ORM_MYSQL_OP::FieldManager::extractField<T> ();
-            for(auto classObject:classObjects)
-            {
-                unsigned int index=_fieldName.size();
+            std::string insertStr = "insert into " + std::string(T::_className) +
+                                    " (" + std::string(T::_fieldName) + ") values ";
+            _fieldName = ORM_MYSQL_OP::FieldManager::extractField<T>();
+            for (auto classObject:classObjects) {
+                unsigned int index = _fieldName.size();
                 std::ostringstream valuesStr;
                 classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
-                                      [&valuesStr,&index](auto &value)
-                                      {
-                                          if (index>1)
-                                          {
-                                              ORM_MYSQL_OP::SerializeValue(valuesStr,value)<<",";
-                                          }
-                                          else
-                                          {
-                                              ORM_MYSQL_OP::SerializeValue(valuesStr,value);
+                                      [&valuesStr, &index](auto &value) {
+                                          if (index > 1) {
+                                              ORM_MYSQL_OP::SerializeValue(valuesStr, value) << ",";
+                                          } else {
+                                              ORM_MYSQL_OP::SerializeValue(valuesStr, value);
                                           }
                                           index--;
                                           return true;
                                       });
 
-                _connector->execute(insertStr+" ("+valuesStr.str()+")");
+                _connector->execute(insertStr + " (" + valuesStr.str() + ")");
             }
 
         }
 
-        template <typename T>
-        void update(const T& classObject)
-        {
-            const auto &fieldNames=ORM_MYSQL_OP::FieldManager::extractField<T>();
+        template<typename T>
+        void update(const T &classObject) {
+            const auto &fieldNames = ORM_MYSQL_OP::FieldManager::extractField<T>();
             std::ostringstream updateStr;
-            std::string updateCmd="update "+std::string(T::_className);
-            unsigned int index=0;
+            std::string updateCmd = "update " + std::string(T::_className);
+            unsigned int index = 0;
             std::ostringstream updateKey;
             classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
-                                  [&updateStr,&fieldNames,&updateKey,&index](auto &val)
-                                  {
-                                      if (index==0)
-                                      {
-                                          updateKey<<fieldNames[index++]<<"=";
-                                          ORM_MYSQL_OP::SerializeValue(updateKey,val);
-                                      }
-                                      else
-                                      {
-                                          updateStr<<fieldNames[index++]<<"=";
-                                          if (index!=fieldNames.size())
-                                          {
-                                              ORM_MYSQL_OP::SerializeValue(updateStr,val)<<",";
-                                          }
-                                          else
-                                          {
-                                              ORM_MYSQL_OP::SerializeValue(updateStr,val);
+                                  [&updateStr, &fieldNames, &updateKey, &index](auto &val) {
+                                      if (index == 0) {
+                                          updateKey << fieldNames[index++] << "=";
+                                          ORM_MYSQL_OP::SerializeValue(updateKey, val);
+                                      } else {
+                                          updateStr << fieldNames[index++] << "=";
+                                          if (index != fieldNames.size()) {
+                                              ORM_MYSQL_OP::SerializeValue(updateStr, val) << ",";
+                                          } else {
+                                              ORM_MYSQL_OP::SerializeValue(updateStr, val);
                                           }
                                       }
                                       return true;
                                   });
-            updateCmd+=" set "+updateStr.str()+" where "+updateKey.str();
+            updateCmd += " set " + updateStr.str() + " where " + updateKey.str();
             _connector->execute(updateCmd);
         }
 
 
-        template <typename nT>
-        void updateRange(const nT& classObjects)
-        {
+        template<typename nT>
+        void updateRange(const nT &classObjects) {
             using T=typename nT::value_type;
 
-            const auto &fieldNames=ORM_MYSQL_OP::FieldManager::extractField<T>();
-            for(auto classObject:classObjects)
-            {
+            const auto &fieldNames = ORM_MYSQL_OP::FieldManager::extractField<T>();
+            for (auto classObject:classObjects) {
 
                 std::ostringstream updateStr;
-                std::string updateCmd="update "+std::string(T::_className);
-                unsigned int index=0;
+                std::string updateCmd = "update " + std::string(T::_className);
+                unsigned int index = 0;
                 std::ostringstream updateKey;
                 classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
-                                      [&updateStr,&fieldNames,&updateKey,&index](auto &val)
-                                      {
-                                          if (index==0)
-                                          {
-                                              updateKey<<fieldNames[index++]<<"=";
-                                              ORM_MYSQL_OP::SerializeValue(updateKey,val);
-                                          }
-                                          else
-                                          {
-                                              updateStr<<fieldNames[index++]<<"=";
-                                              if (index!=fieldNames.size())
-                                              {
-                                                  ORM_MYSQL_OP::SerializeValue(updateStr,val)<<",";
-                                              }
-                                              else
-                                              {
-                                                  ORM_MYSQL_OP::SerializeValue(updateStr,val);
+                                      [&updateStr, &fieldNames, &updateKey, &index](auto &val) {
+                                          if (index == 0) {
+                                              updateKey << fieldNames[index++] << "=";
+                                              ORM_MYSQL_OP::SerializeValue(updateKey, val);
+                                          } else {
+                                              updateStr << fieldNames[index++] << "=";
+                                              if (index != fieldNames.size()) {
+                                                  ORM_MYSQL_OP::SerializeValue(updateStr, val) << ",";
+                                              } else {
+                                                  ORM_MYSQL_OP::SerializeValue(updateStr, val);
                                               }
                                           }
                                           return true;
                                       });
-                updateCmd+=" set "+updateStr.str()+" where "+updateKey.str();
+                updateCmd += " set " + updateStr.str() + " where " + updateKey.str();
                 _connector->execute(updateCmd);
             }
 
         }
 
-        template <typename T>
-        void deleteRow(const T& classObject)
-        {
-            std::string deleteCmd="delete from "+std::string(T::_className);
+        template<typename T>
+        void deleteRow(const T &classObject) {
+            std::string deleteCmd = "delete from " + std::string(T::_className);
             std::ostringstream deleteStr;
             classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
-                                  [&deleteStr](auto &val)
-                                  {
-                                      deleteStr<<ORM_MYSQL_OP::FieldManager::extractField<T>() [0] <<"=";
-                                      ORM_MYSQL_OP::SerializeValue(deleteStr,val);
+                                  [&deleteStr](auto &val) {
+                                      deleteStr << ORM_MYSQL_OP::FieldManager::extractField<T>()[0] << "=";
+                                      ORM_MYSQL_OP::SerializeValue(deleteStr, val);
                                       return false;
                                   });
-            deleteCmd+=" where "+deleteStr.str();
+            deleteCmd += " where " + deleteStr.str();
             _connector->execute(deleteCmd);
 
         }
 
-        template <typename T>
-        Query query(T& classObject)
-        {
-            _fieldName=ORM_MYSQL_OP::FieldManager::extractField<T> ();
-            std::string tableName=classObject._className;
-            _query= new Query(tableName,*_connector);
-            return std::move(*_query);
-        }
-
-        template <typename T>
-        Select select(T& classObject,Exp expr)
-        {
-            std::vector<std::string> fieldName=ORM_MYSQL_OP::FieldManager::extractField<T> ();
-            std::map<std::string,std::string> nameToType;
-            int index=0;
+        template<typename T>
+        Query query(T &classObject) {
+            _fieldName = ORM_MYSQL_OP::FieldManager::extractField<T>();
+            std::string tableName = classObject._className;
+            std::vector<std::string> fieldName = ORM_MYSQL_OP::FieldManager::extractField<T>();
+            std::map<std::string, std::string> nameToType;
+            int index = 0;
             classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
-                                  [&nameToType,&index,&fieldName](auto &val)
-                                  {
-                                      nameToType.insert(std::map<std::string,std::string>::value_type(fieldName[index],ORM_MYSQL_OP::FieldManager::realTypeString(val)));\
+                                  [&nameToType, &index, &fieldName](auto &val) {
+                                      nameToType.insert(std::map<std::string, std::string>::value_type(fieldName[index],
+                                                                                                       ORM_MYSQL_OP::FieldManager::realTypeString(
+                                                                                                               val)));\
                                       index++;
                                       return true;
                                   });
-            _nameToType=nameToType;
+            _nameToType = nameToType;
 
-            std::string tableName=classObject._className;
-            _select=new Select(tableName,expr,*_connector,_nameToType);
+            _fieldName=fieldName;
+            _query = new Query(tableName, *_connector,_fieldName,_nameToType);
+            return std::move(*_query);
+        }
+
+        template<typename T>
+        Select select(T &classObject, Exp expr) {
+            std::vector<std::string> fieldName = ORM_MYSQL_OP::FieldManager::extractField<T>();
+            std::map<std::string, std::string> nameToType;
+            int index = 0;
+            classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
+                                  [&nameToType, &index, &fieldName](auto &val) {
+                                      nameToType.insert(std::map<std::string, std::string>::value_type(fieldName[index],
+                                                                                                       ORM_MYSQL_OP::FieldManager::realTypeString(
+                                                                                                               val)));\
+                                      index++;
+                                      return true;
+                                  });
+            _nameToType = nameToType;
+
+            std::string tableName = classObject._className;
+            _select = new Select(tableName, expr, *_connector, _nameToType);
             return std::move(*_select);
         }
 
-        template <typename T>
-        Select select(T& classObject)
-        {
-            _fieldName=ORM_MYSQL_OP::FieldManager::extractField<T> ();
-            std::string tableName=classObject._className;
-            _select=new Select(tableName,*_connector,_fieldName,_nameToType);
+        template<typename T>
+        Select select(T &classObject) {
+            std::vector<std::string> fieldName = ORM_MYSQL_OP::FieldManager::extractField<T>();
+            std::map<std::string, std::string> nameToType;
+            int index = 0;
+            classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
+                                  [&nameToType, &index, &fieldName](auto &val) {
+                                      nameToType.insert(std::map<std::string, std::string>::value_type(fieldName[index],
+                                                                                                       ORM_MYSQL_OP::FieldManager::realTypeString(
+                                                                                                               val)));\
+                                      index++;
+                                      return true;
+                                  });
+            _nameToType = nameToType;
+
+            _fieldName=fieldName;
+            std::string tableName = classObject._className;
+            _select = new Select(tableName, *_connector, _fieldName, _nameToType);
             return std::move(*_select);
         }
 
         // a dangerous interface for someone who want to use sql sentances
-        ORM_MYSQL_OP::SQLConnector Executor()
-        {
-            return std::move(*_connector);
-        }
+//        ORM_MYSQL_OP::SQLConnector Executor() {
+//            return std::move(*_connector);
+//        }
+
+
 
         /************************************************************************/
 
     private:
         ORM_MYSQL_OP::SQLConnector *_connector;
         std::vector<std::string> _fieldName;
-        std::map<std::string,std::string> _nameToType;
+        std::map<std::string, std::string> _nameToType;
 
         Query *_query;
         Select *_select;
 
     };
+
 }
 #endif //ORM_MYSQL_H

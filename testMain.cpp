@@ -19,6 +19,11 @@ public:
     std::string name;
     int level;
     float score;
+
+    void printItself()
+    {
+        std::cout<<id<<"   "<<name<<"  "<<level<<"  "<<score<<"  "<<std::endl;
+    }
 };
 
 
@@ -35,16 +40,37 @@ int main()
     //mapper.dropTbl(wodner1);
     try {
       // mapper.createTbl(wodner1);
-        mapper.select(wodner1,Exp("name,id")).toVector();
-        mapper.insertRange(listClassObject);
+//        mapper.select(wodner1,Exp("name,id")).toVector();
+  //      mapper.insertRange(listClassObject);
+       // mapper.select(wodner1).toVector();
 
+        std::vector<int> a{1,3,5},b{2,4,6};
+        std::vector<std::string> c{"thief","woder","hehe"};
+      // ORM_MYSQL_OP::OnePiece mi("int","44");
+      //  int gf=0;
+     //   gf=mi;
+     //   ORM_MYSQL_OP::OnePiece ma("string","haha");
+      //  std::string sd=ma;
+      //  int ss=ma;
+       // std::cout<<gf<<sd<<ss;
+
+        //auto g=mapper.select(wodner1,Exp("name,id,level")).toVector(); select(wodner1,Exp("name,id,level,score"))
+        auto g=mapper.query(wodner1).where(Exp("level")<90).toVector();
+        for(auto h:g)
+        {
+            MyClass lol(h[0],h[1],h[2],h[3]);
+            lol.printItself();
+//            std::string name=h[0];
+//            std::string id=h[1];
+//            int level=h[2];
+//            float score=h[3];
+//            std::cout<<id<<" "<<name<<" "<<level<<" "<<score<<"\n";
+        }
     }catch (const std::exception &e)
     {
         std::cout<<e.what();
 
     }
-   // ORM_MYSQL_OP::FieldManager a;
-//    std::cout<<a.getRealVal(std::string("567"),std::string("int"));
 
     return 0;
 }
