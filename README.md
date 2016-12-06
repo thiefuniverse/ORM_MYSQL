@@ -2,7 +2,7 @@
 Mysql ORM (Object Relation Mapping)
 
 # a C++ Orm for mysql #
-:relaxed:steal many many ideas and codes from this [cool man](https://github.com/BOT-Man-JL/ )'s :hurtrealbad: [sqlite orm](https://github.com/BOT-Man-JL/ORM-Lite), you also can go there and find his blog for explanation of sqlite orm.
+:relaxed:steal many many ideas and codes from this [cool man](https://github.com/BOT-Man-JL/ ):hurtrealbad:'s [sqlite orm](https://github.com/BOT-Man-JL/ORM-Lite), you also can go there and find his blog for explanation of sqlite orm.
 
 ## 1 Preparation  ##
 well,firstly you should have installed your mysql.
@@ -107,7 +107,7 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
                       
     auto resultB=mapper.query(helper)      // no select, will select *
                      .where(Exp("level")<90)       // also .where(Exp("name")=="thief")
-                     .limit(2)
+                     .limit(2)          // we also can have a "limit" and "offset" operation
                      .offset(0)
                      .toVector();
 // when you want to create a table, select or query, you need to pass a "helper" classObject.
@@ -130,4 +130,4 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
 ```
 
 ## 3  welcome to improve it~ ##
-:laughing: Some other funtions in mysql are not implemented (like null value, multiple tables operations and etc....:laughing:).Hope that you can improve it if you like it. I also believe my comment can help you understand these codes. If you have questions you can [create a issue](https://github.com/thiefuniverse/ORM_MYSQL/issues).
+:laughing: Some other funtions in mysql are not implemented (like null value, multiple tables operations and etc....:laughing:).Hope that you can improve it if you like it. I also believe my comment can help you understand these codes.If you have questions you can [create a issue](https://github.com/thiefuniverse/ORM_MYSQL/issues).
