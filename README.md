@@ -13,7 +13,7 @@ You can install it from [ official website](https://dev.mysql.com/downloads/conn
 ### 1.2 Add and Include orm_mysql.h with your source files ###
 
 ### 1.3 Add compile option "-lmysqlclient" ###
-if you use makefile tool or gcc,just add it. Or if you are in windows by vs, you should include a dynamic library called "mysqlclient.lib" (I guess it's called that.....)
+if you use makefile tool or gcc,just add it. Or if you are in windows by vs, you should include a dynamic library called "mysqlclient.lib" (I guess it's called that.....:no_mouth:)
 
 in Qt, you should add "QMAKE_LIBS+= -lmysqlclient" in your pro file.
 
@@ -111,7 +111,7 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
                      .offset(0)
                      .toVector();
 // when you want to create a table, select or query, you need to pass a "helper" classObject.
-// you can find we can use _Exp_ to wrap your fields names, then we can create select fields (like "name,id")
+// you can find we can use Exp to wrap your fields names, then we can create select fields (like "name,id")
 //where (like "level")for querying.
 
 // query and select will get a two-dimensional vector whose structure you can get value like this:
@@ -130,4 +130,4 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
 ```
 
 ## 3 welcome to improve it~ ##
-:laughing: you can find that many details can be modified and improved. Welcome to  improve it.
+:laughing: you can find that many details can be modified and improved. Welcome to  improve it. I also believe my comment can help you understand these codes.

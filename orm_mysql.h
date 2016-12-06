@@ -168,6 +168,7 @@ namespace ORM_MYSQL_OP
         MYSQL *connector;
     };
 
+    // this FnVisitor is stealed by me from a cool man, maybe it's visitor design pattern? i don't know ~
     class FnVisitor
     {
       /* this visitor will make a fn execute with vardic args one by one  (so we can handle
