@@ -4,28 +4,28 @@ Mysql ORM (Object Relation Mapping)
 # a C++ Orm for mysql #
 :relaxed:steal many many ideas and codes from this [cool man](https://github.com/BOT-Man-JL/ )'s :hurtrealbad: [sqlite orm](https://github.com/BOT-Man-JL/ORM-Lite)
 
-# 1 Preparation #
+## 1 Preparation  ##
 well,firstly you should have installed your mysql.
 
 1.1 Install C connector for mysql 
-==============================
+----------------------------------
 
 You can install it from [ official website](https://dev.mysql.com/downloads/connector/c/) 
 
 1.2 Add and Include orm_mysql.h with your source files
-===================
+------------------------------------------------------
 
 1.3 Add compile option "-lmysqlclient"
-==================================
+--------------------------------------
 
 if you use makefile tool or gcc,just add it. Or if you are in windows by vs, you should include a dynamic library called "mysqlclient.lib" (I guess it's called that.....)
 
 in Qt, you should add "QMAKE_LIBS+= -lmysqlclient" in your pro file.
 
 
-# 2 Use it #
+## 2 Use it  ##
 2.1 Connect your database
-=====================
+-------------------------
 
 firstly,you should add
 
@@ -67,7 +67,7 @@ Then you can connect your mysql by just a line code:
 
 
 2.2 create,delete,insert,update,query,count
-===============================
+-------------------------------------------
 
 This orm (:laughing: i think i can say it's called that...) just implements few operations and if you are interested in it, you can change it.
 
@@ -130,6 +130,5 @@ _where_ (like "level")for querying.
     
 ```
 
-3 welcome to improve it~
-==
+## 3 welcome to improve it~ ##
 :laughing: you can find many details which can be modified. 
