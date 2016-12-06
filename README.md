@@ -130,4 +130,4 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
 ```
 
 ## 3  welcome to improve it~ ##
-:laughing: Some other funtions in mysql are not implemented (like null value, multiple tables operations and etc....:laughing:).Hope that you can improve it if you like it. I also believe my comment can help you understand these codes.
+:laughing: Some other funtions in mysql are not implemented (like null value, multiple tables operations and etc....:laughing:).Hope that you can improve it if you like it. I also believe my comment can help you understand these codes.If you have questions you can [create a issue](https://github.com/thiefuniverse/ORM_MYSQL/issues).
