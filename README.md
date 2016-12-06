@@ -23,7 +23,7 @@ in Qt, you should add "QMAKE_LIBS+= -lmysqlclient" in your pro file.
 firstly,you should add
 
 ```C++
-using namespace ORM_MYSQL_THIEF
+using namespace ORM_MYSQL_THIEF;
 ```
 and then you should add some codes at your class, just like this:
 
@@ -34,7 +34,7 @@ using namespace ORM_MYSQL_THIEF;
 class MyClass
 {
 
-// this line are critical, first "serverDB" is your table name
+// this line are critical, first "serverDB" is your table name, first "id" will be your primary key if you don't want to pass another primary key.
 // And id ... score are column fields that you want to add to your database
 ORMAP_MYSQL(serverDB,id,name,level,score)
 
@@ -77,7 +77,7 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
     listClassObject.push_back(wodner4);
 
 ////////// Then you can _DO_ :
-    /* two way to create a table. */
+    /* create */
     mapper.createTbl(helper);   //create a table by info in wodner1
 //      | id | name | level | score |
 
@@ -88,6 +88,14 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
     mapper.insert(wodner1);   // insert one 
     mapper.insertRange(listClassObject);   // insert a vector
         
+    /* delete */
+    mapper.dropTbl(helper);     //delete table
+    mapper.deleteRow(wodner1);  //delete a row
+    
+    /* update */
+    mapper.update(wodner1);     // update one 
+    mapper.updateRange(listClassObject); //update a vector
+    
     /* select and query */
     mapper.select(helper,Exp("name,id")).toVector();  //select name,id 
     mapper.select(helper).toVector();
@@ -122,4 +130,4 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
 ```
 
 ## 3 welcome to improve it~ ##
-:laughing: you can find that many details can be modified and improved. Welcome to 
+:laughing: you can find that many details can be modified and improved. Welcome to  improve it.

@@ -51,9 +51,13 @@ int main()
         mapper.insertRange(listClassObject);
         mapper.insert(wodner1);
         mapper.select(helper).toVector();
-
+       // mapper.update(wodner1);
+       // mapper.updateRange(listClassObject);
         std::vector<int> a{1,3,5},b{2,4,6};
         std::vector<std::string> c{"thief","woder","hehe"};
+
+        mapper.dropTbl(helper);
+        mapper.deleteRow(wodner1);
       // ORM_MYSQL_OP::OnePiece mi("int","44");
       //  int gf=0;
      //   gf=mi;
@@ -65,7 +69,8 @@ int main()
         std::cout<<"count  "<<counter<<"\n";
         //auto g=mapper.select(wodner1,Exp("name,id,level")).toVector(); select(wodner1,Exp("name,id,level,score"))
         auto g=mapper.query(helper).where(Exp("level")<90).limit(2).offset(0).toVector();
-        auto cr=mapper.select(helper).query().where(Exp("level")<78).toVector();
+        //auto cr=mapper.select(helper).query().where(Exp("level")<78).toVector();
+
         for(auto h:g)
         {
             MyClass lol(h[0],h[1],h[2],h[3]);
