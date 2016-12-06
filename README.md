@@ -2,7 +2,7 @@
 Mysql ORM (Object Relation Mapping)
 
 # a C++ Orm for mysql #
-:relaxed:steal many many ideas and codes from this [cool man](https://github.com/BOT-Man-JL/ )'s :hurtrealbad: [sqlite orm](https://github.com/BOT-Man-JL/ORM-Lite)
+:relaxed:steal many many ideas and codes from this [cool man](https://github.com/BOT-Man-JL/ )'s :hurtrealbad: [sqlite orm](https://github.com/BOT-Man-JL/ORM-Lite), you also can go there and find his blog for explanation of sqlite orm.
 
 ## 1 Preparation  ##
 well,firstly you should have installed your mysql.
@@ -129,5 +129,5 @@ This orm (:laughing: i think i can say it's called that...) just implements few 
     
 ```
 
-## 3 welcome to improve it~ ##
-:laughing: you can find that many details can be modified and improved. Welcome to  improve it. I also believe my comment can help you understand these codes.
+## 3  welcome to improve it~ ##
+:laughing: Some other funtions in mysql are not implemented (like null value, multiple tables operations and etc....:laughing:).Hope that you can improve it if you like it. I also believe my comment can help you understand these codes.
