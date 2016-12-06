@@ -44,20 +44,21 @@ int main()
     listClassObject.push_back(wodner4);
 
     try {
-        mapper.createTbl(wodner1);
-        mapper.createTbl(wodner1,1,"number");
+       // mapper.createTbl(wodner1);
+      //  mapper.createTbl(wodner1,1,"number");
 
-        mapper.select(helper,Exp("name,id")).toVector();
+     //   mapper.select(helper,Exp("name,id")).toVector();
         mapper.insertRange(listClassObject);
         mapper.insert(wodner1);
-        mapper.select(helper).toVector();
+     //   mapper.select(helper).toVector();
        // mapper.update(wodner1);
        // mapper.updateRange(listClassObject);
         std::vector<int> a{1,3,5},b{2,4,6};
         std::vector<std::string> c{"thief","woder","hehe"};
 
-        mapper.dropTbl(helper);
-        mapper.deleteRow(wodner1);
+       // mapper.dropTbl(helper);
+    //    mapper.deleteRow(wodner1);
+
       // ORM_MYSQL_OP::OnePiece mi("int","44");
       //  int gf=0;
      //   gf=mi;

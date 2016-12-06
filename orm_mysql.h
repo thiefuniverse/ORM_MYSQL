@@ -36,6 +36,9 @@ namespace ORM_MYSQL_OP
 
     class OnePiece
     {
+      /* this class for query result output
+       output may be different types and now we just support int,float and string
+      */
     public:
 
         //init real value by type string
@@ -58,7 +61,13 @@ namespace ORM_MYSQL_OP
             }
         }
 
-        // overload different type function for assignment
+        /* overload different type function for assignment
+         with this, you can do this:
+         OnePiece mm("int",56);
+         int a=mm;        a will be 56
+         float b=mm;      b's value are not known.
+         string c=mm;     c's value are not known.
+        */
         operator int() const
         {
             return value_int;
@@ -87,6 +96,7 @@ namespace ORM_MYSQL_OP
         SQLConnector (const std::string &host, const std::string &user,
                       const std::string &password,const std::string &db,int port)
         {
+          // C connector for connector init
             connector=mysql_init(NULL);
             if (connector==NULL)
             {
@@ -96,7 +106,7 @@ namespace ORM_MYSQL_OP
                 );
             }
 
-            //todo maybe args socket and clientflag can be configured
+            //connect your mysql and make connector works
             if(mysql_real_connect(connector,host.c_str(),user.c_str(),
                                   password.c_str(),db.c_str(),port,NULL,0)==NULL)
             {
@@ -109,6 +119,7 @@ namespace ORM_MYSQL_OP
         }
 
 
+        // return a two-dimensional vector with OnePiece( a dirty multiple value )
         std::vector<std::vector<ORM_MYSQL_OP::OnePiece>> getResultVector(std::vector<std::string>& fields,
                                                                          std::map<std::string,std::string>& nameToType)
         {
@@ -117,13 +128,15 @@ namespace ORM_MYSQL_OP
             MYSQL_RES *_result=mysql_store_result(connector);
             if (_result!=NULL)
             {
+              // get columns for results
                 int num_fields=mysql_num_fields(_result);
                 MYSQL_ROW _row;
-                while((_row=mysql_fetch_row(_result)))
+                while((_row=mysql_fetch_row(_result)))   // fetch a row of results
                 {
                     std::vector <ORM_MYSQL_OP::OnePiece> singleRow;
                     for(int i=0;i<num_fields;i++)
                     {
+                      // create a OnePiece and add it to result
                         OnePiece one(nameToType.find(fields[i])->second,std::string(_row[i]));
                         singleRow.push_back(one);
                      }
@@ -144,6 +157,7 @@ namespace ORM_MYSQL_OP
         }
 
 
+
         void execute(const std::string & cmd)
         {
             mysql_query(connector,cmd.c_str());
@@ -156,6 +170,10 @@ namespace ORM_MYSQL_OP
 
     class FnVisitor
     {
+      /* this visitor will make a fn execute with vardic args one by one  (so we can handle
+         vardic args at ORMAP_MYSQL(tableName,...))
+       */
+
     public:
         template <typename Fn, typename... Args>
         inline void Visit (Fn fn, Args & ... args) const
@@ -179,7 +197,7 @@ namespace ORM_MYSQL_OP
     };
 
 
-    // Helper - Serialize
+    // Helper - Serialize, transfer values to string
     template <typename T>
     inline std::ostream &SerializeValue (std::ostream &os,
                                          const T &value)
@@ -223,6 +241,8 @@ namespace ORM_MYSQL_OP
         }
 
         // Helper - Get TypeString
+        // give 5 you get "int", give 4.23 you get "float"
+        // ! also these codes limit our supported data types 
         template <typename T>
         static const char *TypeString (T &t)
         {
@@ -247,7 +267,7 @@ namespace ORM_MYSQL_OP
         }
 
 
-
+        // just like above, but this is for result output
         template <typename T>
         static const char *realTypeString (T &t)
         {
@@ -282,7 +302,10 @@ namespace ORM_MYSQL_THIEF {
     class Exp;
 
 
-    // get expression string
+    /*get expression string
+     make you can construct your experssion
+    here, we need use Exp("score")<45.12 to construct    (score<45.12)
+    */
     class Exp {
     public:
         std::string realExpr;
@@ -314,6 +337,7 @@ namespace ORM_MYSQL_THIEF {
             return *this;
         }
 
+        // many operator overload  functions
         template<typename T>
         inline const Exp& operator=(T value) {
             return Field("=", std::move(value));
@@ -365,6 +389,9 @@ namespace ORM_MYSQL_THIEF {
     };
 
     class Query {
+      /* when construct, i passed a SQLConnector which will execute command
+         nameToType will offer a map for your fieldName and type (int,float or string)
+       */
     public:
         Query(std::string &tableName, std::string &selectField, ORM_MYSQL_OP::SQLConnector &connector,
               std::vector<std::string> &fields,
@@ -383,6 +410,7 @@ namespace ORM_MYSQL_THIEF {
 
         }
 
+      // different operations and modify sqlStr and sqlWhere 
         Query &where(const Exp &expr) {
             _sqlwhere = " where " + expr.realExpr;
             _queryStr += _sqlwhere;
@@ -443,6 +471,7 @@ namespace ORM_MYSQL_THIEF {
     };
 
     class Select {
+      /* we should extrac some fields and keep it for later query and toVector*/
     public:
         Select(const std::string &tableName, Exp &expr, ORM_MYSQL_OP::SQLConnector &connector,
                std::map<std::string, std::string> &nameToType)
@@ -491,6 +520,7 @@ namespace ORM_MYSQL_THIEF {
     };
 
     class ORMapper {
+      // Main operator
     public:
 
         ORMapper(const std::string &host, const std::string &user,
@@ -510,6 +540,7 @@ namespace ORM_MYSQL_THIEF {
             std::vector<std::string> _fieldType(_fieldName.size());
             unsigned int index = 0;
 
+            // get _fieldType one by one (which use FnVisitor)
             classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
                                   [&_fieldType, &index](auto &val) {
                                       _fieldType[index++] = ORM_MYSQL_OP::FieldManager::TypeString(val);
@@ -539,7 +570,7 @@ namespace ORM_MYSQL_THIEF {
                  createField += " primary key (" + _fieldName[0] + " )";
             }
 
-            //todo execute create
+            //execute create
             _connector->execute(createStr + " ( " + createField + " )");
         }
 
@@ -601,6 +632,8 @@ namespace ORM_MYSQL_THIEF {
             std::string updateCmd = "update " + std::string(T::_className);
             unsigned int index = 0;
             std::ostringstream updateKey;
+
+            // get new value and construct sqlCommand string
             classObject._Transfer(ORM_MYSQL_OP::FnVisitor(),
                                   [&updateStr, &fieldNames, &updateKey, &index](auto &val) {
                                       if (index == 0) {
@@ -731,11 +764,12 @@ namespace ORM_MYSQL_THIEF {
             return std::move(*_select);
         }
 
-        // a dangerous interface for someone who want to use sql sentances
-//        ORM_MYSQL_OP::SQLConnector Executor() {
-//            return std::move(*_connector);
-//        }
-
+       /**********************************************************************/
+       /*  //a dangerous interface for someone who want to use sql sentances */
+       /*  ORM_MYSQL_OP::SQLConnector Executor() {                           */
+       /*      return std::move(*_connector);                                */
+       /* }                                                                  */
+       /**********************************************************************/
 
 
         /************************************************************************/
