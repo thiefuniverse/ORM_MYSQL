@@ -296,7 +296,7 @@ namespace ORM_MYSQL_THIEF {
         }
 
         template<typename T>
-        Exp Field(const std::string &opStr, T value) {
+        const Exp& Field(const std::string &opStr, T value) {
             std::ostringstream os;
             ORM_MYSQL_OP::SerializeValue(os, value);
             realExpr += opStr + os.str();
@@ -305,7 +305,7 @@ namespace ORM_MYSQL_THIEF {
             return *this;
         }
 
-        Exp Field(const std::string &opStr, const char *value) {
+        const Exp& Field(const std::string &opStr, const char *value) {
             std::ostringstream os;
             ORM_MYSQL_OP::SerializeValue(os, std::string(value));
             realExpr += opStr + os.str();
@@ -315,48 +315,48 @@ namespace ORM_MYSQL_THIEF {
         }
 
         template<typename T>
-        inline Exp operator=(T value) {
+        inline const Exp& operator=(T value) {
             return Field("=", std::move(value));
         }
 
         template<typename T>
-        inline Exp operator==(T value) {
+        inline const Exp& operator==(T value) {
             return Field("=", std::move(value));
         }
 
         template<typename T>
-        inline Exp operator!=(T value) {
+        inline const Exp& operator!=(T value) {
             return Field("!=", std::move(value));
         }
 
         template<typename T>
-        inline Exp operator<(T value) {
+        inline const Exp& operator<(T value) {
             return Field("<", std::move(value));
         }
 
         template<typename T>
-        inline Exp operator<=(T value) {
+        inline const Exp& operator<=(T value) {
             return Field("<=", std::move(value));
         }
 
         template<typename T>
-        inline Exp operator>(T value) {
+        inline const Exp& operator>(T value) {
             return Field(">", std::move(value));
         }
 
         template<typename T>
-        inline Exp operator>=(T value) {
+        inline const Exp& operator>=(T value) {
             return Field(">=", std::move(value));
         }
 
-        inline Exp operator||(const Exp &expr) {
+        inline const Exp& operator||(const Exp &expr) {
             realExpr += " or " + expr.realExpr;
             realExpr.insert(0, "(");
             realExpr.push_back(')');
             return *this;
         }
 
-        inline Exp operator&&(const Exp &expr) {
+        inline const Exp& operator&&(const Exp &expr) {
             realExpr += " and " + expr.realExpr;
             realExpr.insert(0, "(");
             realExpr.push_back(')');
@@ -401,7 +401,7 @@ namespace ORM_MYSQL_THIEF {
         }
 
         Query &offset(int count) {
-            _queryStr += " offset　" + std::to_string(count);
+            _queryStr += " offset " + std::to_string(count);
             return *this;
         }
 
@@ -425,6 +425,12 @@ namespace ORM_MYSQL_THIEF {
         std::vector<std::vector<ORM_MYSQL_OP::OnePiece>> toVector() {
             _connector->execute(_queryStr);
             return std::move(_connector->getResultVector(_fields,_nameToType));
+        }
+
+        int count()
+        {
+            _connector->execute(_queryStr);
+            return _connector->getResultVector(_fields,_nameToType).size();
         }
 
     private:
@@ -498,7 +504,7 @@ namespace ORM_MYSQL_THIEF {
         ************************************************************************/
         // create table
         template<typename T>
-        bool createTbl(const T &classObject) {
+        bool createTbl(const T &classObject,int primary=0,std::string primaryKey="id") {
             // get fieldName and fieldType
             _fieldName = ORM_MYSQL_OP::FieldManager::extractField<T>();
             std::vector<std::string> _fieldType(_fieldName.size());
@@ -516,7 +522,23 @@ namespace ORM_MYSQL_THIEF {
             for (unsigned int i = 0; i < _fieldType.size(); ++i) {
                 createField += _fieldName[i] + " " + std::string(_fieldType[i]) + ",";
             }
-            createField += " primary key (" + _fieldName[0] + " )";
+            if (primary==1)
+            {
+                if(primaryKey=="")
+                {
+                    throw std::runtime_error("you should send primaryKey value.");
+                }
+                else
+                {
+                     createField += primaryKey+" int auto_increment,primary key(" +primaryKey + " )";
+                }
+
+            }
+            else
+            {
+                 createField += " primary key (" + _fieldName[0] + " )";
+            }
+
             //todo execute create
             _connector->execute(createStr + " ( " + createField + " )");
         }
