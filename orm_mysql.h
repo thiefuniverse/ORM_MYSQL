@@ -129,7 +129,8 @@ namespace ORM_MYSQL_OP
             if (_result!=NULL)
             {
               // get columns for results
-                int num_fields=mysql_num_fields(_result);
+              //int num_fields=mysql_num_fields(_result);
+              int num_fields=fields.size();
                 MYSQL_ROW _row;
                 while((_row=mysql_fetch_row(_result)))   // fetch a row of results
                 {
